@@ -1,0 +1,34 @@
+{
+    "configurations": [
+        {
+            "name": "Debug with no arguments",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/SerialToMIDI",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "C/C++: clang build active file"
+        },
+        {
+            "name": "Debug with one argument",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/SerialToMIDI",
+            "args": [
+                "-m",
+                "bleh"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "C/C++: clang build active file"
+        }
+    ],
+    "version": "2.0.0"
+}
