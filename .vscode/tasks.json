@@ -12,7 +12,7 @@
 				"${workspaceFolder}/src/**.c",
 				"-lportmidi",
 				"-o",
-				"${workspaceFolder}/bin/SerialToMIDI"
+				"${workspaceFolder}/bin/serial-to-midi"
 			],
 			"options": {
 				"cwd": "${fileDirname}"

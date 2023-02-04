@@ -1,6 +1,6 @@
 //
 //  main.c
-//  SerialToMIDI
+//  serial-to-midi
 //
 //  Created by Michael Obed on 09/11/2021.
 //
@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include "midi.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,26 +26,63 @@ int main(int argc, const char * argv[])
     const char* exitMsg = " Exiting...\n";
     int i = 0;
     PortMidiStream* midiInStream = NULL;
+    char midiName[256] = "IAC Driver Bus 1";
     PortMidiStream* midiOutStream = NULL;
+    long serialBaud = 76800;
     char serialBytes[3] = {0x00, 0x00, 0x00};
     int serialFd = -1;
+    char serialName[1032] = "";
     
-    /* Exit if too few arguments were supplied. */
-    if(argc < 2)
+    /* Parse arguments. */
+    for(i = 1; i < argc; i++)
     {
-        printf("Too few arguments supplied!%s", exitMsg);
-        return(EXIT_FAILURE);
+        /* Baud rate. */
+        if(strcmp(argv[i], "-b") == 0)
+        {
+            /* Check for invalid/no argument. */
+            if(((i + 1) >= argc) || (atol(argv[i + 1]) == 0))
+            {
+                printf("Invalid baud rate!%s", exitMsg);
+                exit(EXIT_FAILURE);
+            }
+            else serialBaud = atol(argv[i + 1]);
+        }
+
+        /* Serial port name. */
+        else if(strcmp(argv[i], "-s") == 0)
+        {
+            if(((i + 1) >= argc) || (strlen(argv[i + 1]) > sizeof(serialName)))
+            {
+                printf("Serial port name too long!%s", exitMsg);
+                exit(EXIT_FAILURE);
+            }
+            else strcpy(serialName, argv[i + 1]);
+        }
+
+        /* MIDI port name. */
+        else if(strcmp(argv[i], "-m") == 0)
+        {
+            if(((i + 1) >= argc) || (strlen(argv[i + 1]) > sizeof(midiName)))
+            {
+                printf("MIDI port name too long!%s", exitMsg);
+                exit(EXIT_FAILURE);
+            }
+            else strcpy(midiName, argv[i + 1]);
+        }
     }
 
-    /* If two arguments were supplied (the program name string (ignored) and the MIDI device), choose the first device starting with "usbserial".
-     * Set it up for 76800 baud, and use the IAC Driver Bus 1 MIDI device as default. */
-    else if(argc == 2)
+    /* If no serial port name was supplied, use default settings. */
+    if(strlen(serialName) == 0)
     {
         char devPath[1032] = "/dev/";
         DIR* pDirDevs = opendir(devPath);
         struct dirent* pDirEnt = NULL;
         struct dirent* pTemp = readdir(pDirDevs);
         int devsFound = 0;
+
+        printf("Configuring with default serial port: /dev/cu.usbserial* (%ld baud) <-> %s.\n\n", serialBaud, midiName);
+
+        /* Find the first usbserial device, then try to use it. */
         do
         {
             if(strstr(pTemp->d_name, "cu.usbserial") != NULL)
@@ -60,27 +98,25 @@ int main(int argc, const char * argv[])
         if(pDirEnt == NULL)
         {
             printf("usbserial device not found!%s", exitMsg);
-            return(EXIT_FAILURE);
+            return EXIT_FAILURE;
         }
-        
-        if((cfgSerial(&serialFd, devPath, 76800) < 0) ||
-           (MidiInit(argv[1], &midiInStream, &midiOutStream) < 0))
+
+        if((cfgSerial(&serialFd, serialName, serialBaud) < 0) ||
+           (MidiInit(midiName, &midiInStream, &midiOutStream) < 0))
         {
             printf("%s", exitMsg);
             return EXIT_FAILURE;
         }
     }
-    
-    /* Check for exactly four arguments:
-     * 1. The program name (ignored).
-     * 2. The serial port name.
-     * 3. The serial port's baud rate.
-     * 4. The MIDI port name. */
-    else if((cfgSerial(&serialFd, argv[1], atol(argv[2])) < 0) ||
-       (MidiInit(argv[3], &midiInStream, &midiOutStream) < 0))
+    else
     {
-        printf("%s", exitMsg);
-        return EXIT_FAILURE;
+        printf("Configuring as %s (%ld baud) <-> %s.\n\n", serialName, serialBaud, midiName);
+        if((cfgSerial(&serialFd, serialName, serialBaud) < 0) ||
+           (MidiInit(midiName, &midiInStream, &midiOutStream) < 0))
+        {
+            printf("%s", exitMsg);
+            return EXIT_FAILURE;
+        }
     }
     
     atexit(&cleanup);
