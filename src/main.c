@@ -1,6 +1,6 @@
 //
 //  main.c
-//  SerialToMIDI
+//  serial-to-midi
 //
 //  Created by Michael Obed on 09/11/2021.
 //
